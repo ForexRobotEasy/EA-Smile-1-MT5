@@ -1,0 +1,93 @@
+
+// EA Smile 1 MT5
+// Developer's Site: forexroboteasy.com
+// Developer: Forex Robot Easy Team
+
+// Import necessary libraries and classes
+#include <Trade/Trade.mqh>
+#include <MovingAverages/MovingAverages.mqh>
+
+// Define constants for EMA strategy parameters
+#define FAST_EMA_PERIOD 10
+#define SLOW_EMA_PERIOD 20
+
+// Define constants for stop loss and take profit levels
+#define STOP_LOSS 50
+#define TAKE_PROFIT 100
+
+// Create an instance of the Trade class
+CTrade trade;
+
+// Create an instance of the MovingAverages class
+CMovingAverages movingAverages;
+
+// Define the OnTick function
+void OnTick()
+{
+    // Get the current EMA values
+    double fastEma = movingAverages.iMA(NULL, 0, FAST_EMA_PERIOD, 0, MODE_EMA, PRICE_CLOSE, 0);
+    double slowEma = movingAverages.iMA(NULL, 0, SLOW_EMA_PERIOD, 0, MODE_EMA, PRICE_CLOSE, 0);
+    
+    // Check for a bullish trend
+    if (fastEma > slowEma)
+    {
+        // Open a long position
+        trade.Buy(LOT_SIZE, SYMBOL, 0, ASK, STOP_LOSS, TAKE_PROFIT, 'Bullish Trend');
+    }
+    // Check for a bearish trend
+    else if (fastEma < slowEma)
+    {
+        // Open a short position
+        trade.Sell(LOT_SIZE, SYMBOL, 0, BID, STOP_LOSS, TAKE_PROFIT, 'Bearish Trend');
+    }
+}
+
+// Define the OnInit function
+void OnInit()
+{
+    // Enable automated trading
+    trade.SetExpertMagicNumber(123456);
+    trade.SetExpertStopLoss(STOP_LOSS);
+    trade.SetExpertTakeProfit(TAKE_PROFIT);
+    
+    // Set the EMA strategy parameters
+    movingAverages.SetFastEmaPeriod(FAST_EMA_PERIOD);
+    movingAverages.SetSlowEmaPeriod(SLOW_EMA_PERIOD);
+    
+    // Set the symbol and lot size
+    trade.SetSymbol(SYMBOL);
+    trade.SetVolume(LOT_SIZE);
+    
+    // Subscribe to price updates
+    trade.SubscribeToQuotes(SYMBOL);
+}
+
+// Define the OnDeinit function
+void OnDeinit(const int reason)
+{
+    // Unsubscribe from price updates
+    trade.UnsubscribeFromQuotes(SYMBOL);
+    
+    // Close all open positions
+    trade.CloseAll();
+}
+
+// Define the main entry point of the program
+void OnStart()
+{
+    // Initialize the trading software
+    OnInit();
+    
+    // Run the program until it is stopped or terminated
+    while (!IsStopped() && !IsStoppedByUser())
+    {
+        // Call the OnTick function for market analysis and trading
+        OnTick();
+        
+        // Sleep for a short period to avoid excessive CPU usage
+        Sleep(100);
+    }
+    
+    // Clean up and deinitialize the trading software
+    OnDeinit(0);
+}
